@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Subject, BehaviorSubject, combineLatest, Observable, merge } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { Subject, BehaviorSubject, combineLatest, Observable, of, NEVER } from 'rxjs';
 import { Sort } from './sort.enum';
 import { Order } from './order.enum';
-import { SearchParams } from '../interfaces/search-params';
-import { filterPresent, debug } from '../helpers/rxjs-helpers';
-import { sample, map, switchMap, share, pluck } from 'rxjs/operators';
+import { filterPresent } from '../helpers/rxjs-helpers';
+import { sample, map, switchMap, share, pluck, catchError } from 'rxjs/operators';
 import { User, SearchResults } from '../interfaces/search-results';
+import { retryBackoff, RetryBackoffConfig } from 'backoff-rxjs'
 
 @Injectable({
   providedIn: 'root'
@@ -60,6 +60,15 @@ export class GithubService {
 
       const search$ = combineLatest(params$, headers$).pipe(
         switchMap(([params, headers]) => this.http.get<SearchResults>(GithubService.userSearchUrl, { headers: headers, params: params })),
+        retryBackoff(<RetryBackoffConfig>{
+          initialInterval: 1,
+          maxRetries: 3,
+          shouldRetry: (error:HttpErrorResponse) => {
+            console.log('should retry', error.status !== 404);
+            return error.status !== 404;
+          },
+        }),
+        catchError(err => err.status < 500 ? NEVER : of(err)),
         share(),
       )
 
