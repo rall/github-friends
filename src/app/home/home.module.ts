@@ -6,6 +6,7 @@ import { RouterModule } from '@angular/router';
 
 import { HomePage } from './home.page';
 import { SearchComponent } from './search/search.component';
+import { UserComponent } from './user/user.component';
 
 @NgModule({
   imports: [
@@ -22,10 +23,11 @@ import { SearchComponent } from './search/search.component';
   ],
   declarations: [
     HomePage,
-    SearchComponent
+    SearchComponent,
+    UserComponent
   ],
   entryComponents: [
-    SearchComponent
+    SearchComponent,
   ]
 })
 export class HomePageModule {}
