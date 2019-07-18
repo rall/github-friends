@@ -1,5 +1,5 @@
-import { Observable, fromEventPattern } from 'rxjs';
-import { tap, switchMap, filter, map, mapTo, withLatestFrom } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { tap, filter } from 'rxjs/operators';
 
 export function debug<T>(message:any) {
     return (observable$: Observable<T>): Observable<T> => {
