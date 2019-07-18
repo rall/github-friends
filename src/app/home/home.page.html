@@ -1,11 +1,13 @@
 <ion-header>
   <ion-toolbar>
-    <app-search (trigger)="doSearch($event)" [searchParams]="searchParamsSubject"></app-search>
+    <app-search (trigger)="doSearch($event)" [searchParams]="githubService.searchParamsSubject"></app-search>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <div class="ion-padding">
-    hi there
-  </div>
+  <ion-list>
+    <ion-item *ngFor="let user of githubService.results$ | async">
+      <app-user [user]="user"></app-user>
+    </ion-item>
+  </ion-list>
 </ion-content>
