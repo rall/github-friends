@@ -1,12 +1,12 @@
 <form [formGroup]="searchForm">
   <ion-grid>
-    <ion-searchbar type="text" formControlName="term" [value]="(searchParams | async).term"></ion-searchbar>
+    <ion-searchbar type="text" formControlName="term"></ion-searchbar>
     <ion-row>
       <ion-col size="2">
         <ion-item>
           <ion-label position="fixed">Sort by</ion-label>
           <ion-select formControlName="sort">
-            <ion-select-option *ngFor="let item of sort | keyvalue" [value]="item.key" [selected]="(searchParams | async).sort === item.key">{{ item.value }}</ion-select-option>
+            <ion-select-option *ngFor="let item of sort | keyvalue" [value]="item.key">{{ item.value }}</ion-select-option>
           </ion-select>
         </ion-item>
       </ion-col>
@@ -14,26 +14,26 @@
         <ion-item>
           <ion-label position="fixed">Order</ion-label>
           <ion-select formControlName="order">
-            <ion-select-option *ngFor="let item of order | keyvalue" [value]="item.key" [selected]="(searchParams | async).order === item.key">{{ item.value }}</ion-select-option>
+            <ion-select-option *ngFor="let item of order | keyvalue" [value]="item.key">{{ item.value }}</ion-select-option>
           </ion-select>
         </ion-item>
       </ion-col>
       <ion-col size="1">
         <ion-item>
           <ion-label position="stacked">Page</ion-label>
-          <ion-input type="number" formControlName="page" [value]="(searchParams | async).page"></ion-input>
+          <ion-input type="number" formControlName="page"></ion-input>
         </ion-item>
       </ion-col>
       <ion-col size="1">
         <ion-item>
           <ion-label position="stacked">Results per Page</ion-label>
-          <ion-input type="number" formControlName="perPage" [value]="(searchParams | async).perPage"></ion-input>
+          <ion-input type="number" formControlName="perPage"></ion-input>
         </ion-item>
       </ion-col>
       <ion-col size="1">
         <ion-item>
           <ion-label position="stacked">Show Match</ion-label>
-          <ion-toggle formControlName="showMatch" [checked]="(searchParams | async).showMatch"></ion-toggle>
+          <ion-toggle formControlName="showMatch"></ion-toggle>
         </ion-item>
       </ion-col>
     </ion-row>

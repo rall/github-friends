@@ -3,8 +3,9 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { Sort } from 'src/app/services/sort.enum';
 import { Order } from 'src/app/services/order.enum';
 import { Observable, Subject, fromEvent } from 'rxjs';
-import { filter, mapTo, delay } from 'rxjs/operators';
+import { filter, mapTo, delay, take } from 'rxjs/operators';
 import { SearchParams } from 'src/app/interfaces/search-params';
+import { debug } from 'src/app/helpers/rxjs-helpers';
 
 @Component({
   selector: 'app-search',
@@ -39,6 +40,11 @@ export class SearchComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.searchForm.valueChanges.subscribe(this.searchParams)
+    this.searchForm.valueChanges.subscribe(this.searchParams);
+
+    // set initial form values
+    this.searchParams.asObservable().pipe(
+      take(1),
+    ).subscribe(this.searchForm.setValue.bind(this.searchForm));
   }
 }
