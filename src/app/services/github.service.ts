@@ -1,29 +1,33 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
-import { Subject, BehaviorSubject, combineLatest, Observable, of, NEVER } from 'rxjs';
+import { Subject, BehaviorSubject, combineLatest, Observable, of, NEVER, merge } from 'rxjs';
 import { Sort } from './sort.enum';
 import { Order } from './order.enum';
-import { filterPresent } from '../helpers/rxjs-helpers';
-import { sample, map, switchMap, share, pluck, catchError } from 'rxjs/operators';
+import { filterPresent, debug, filterTrue } from '../helpers/rxjs-helpers';
+import { sample, map, switchMap, share, pluck, catchError, scan, debounceTime, filter } from 'rxjs/operators';
 import { User, SearchResults } from '../interfaces/search-results';
 import { retryBackoff, RetryBackoffConfig } from 'backoff-rxjs'
+import { SearchParams } from '../interfaces/search-params';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GithubService {
-  static hostName = "api.github.com";
-  static baseUrl = `https://${GithubService.hostName}/search/`;
-  static userSearchUrl = `${GithubService.baseUrl}users/`;
-  static textMatchHeader = "application/vnd.github.v3.text-match+json";
+  static HOST_NAME = "api.github.com";
+  static BASE_URL = `https://${GithubService.HOST_NAME}/search/`;
+  static USER_SEARCH_URL = `${GithubService.BASE_URL}users`;
+  static TEXT_MATCH_HEADER = "application/vnd.github.v3.text-match+json";
 
-  querySubject: Subject<string> = new Subject();
-  perPageSubject: BehaviorSubject<number> = new BehaviorSubject(10);
-  currentPageSubject: BehaviorSubject<number> = new BehaviorSubject(1);
-  textMatchSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  sortSubject: BehaviorSubject<Sort> = new BehaviorSubject(Sort.default);
-  orderSubject: BehaviorSubject<Order> = new BehaviorSubject(Order.desc);
+  static INITIAL_PARAMS:SearchParams = {
+    term: '',
+    sort: Sort.repos,
+    order: Order.desc,
+    page: 1,
+    perPage: 20,
+    showMatch: false
+  }
 
+  searchParamsSubject: BehaviorSubject<SearchParams> = new BehaviorSubject(GithubService.INITIAL_PARAMS);
   triggerSubject: Subject<boolean> = new Subject();
 
   results$: Observable<User[]>;
@@ -33,40 +37,58 @@ export class GithubService {
   constructor(
     private http: HttpClient,
     ) {
-      const query$ = this.querySubject.pipe(
+      const queryParam$ = this.searchParamsSubject.pipe(
+        pluck("term"),
         filterPresent(),
         sample(this.triggerSubject),
+        map<string, [string, string]>(query => ["q", query]),
       );
 
-      const params$:Observable<HttpParams> = combineLatest(
-        query$,
-        this.perPageSubject,
-        this.currentPageSubject,
-        this.sortSubject,
-        this.orderSubject,
+      const perPageParam$ = this.searchParamsSubject.pipe(
+        pluck('perPage'),
+        filterTrue(),
+        map<number, [string, string]>(per => ["per_page", String(per)]),
+      );
+
+      const currentPageParam$ = this.searchParamsSubject.pipe(
+        pluck('page'),
+        filter(page => page > 0),
+        map<number, [string, string]>(page => ["page", String(page)]),
+      );
+
+      const sortParam$ = this.searchParamsSubject.pipe(
+        pluck('sort'),
+        filterTrue(),
+        map<Sort, [string, string]>(sort => ["sort", String(sort)]),
+      );
+
+      const orderParam$ = this.searchParamsSubject.pipe(
+        pluck('order'),
+        filterTrue(),
+        map<Order, [string, string]>(order => ["order", String(order)]),
+      );
+
+      const params$:Observable<HttpParams> = merge(
+        queryParam$,
+        perPageParam$,
+        currentPageParam$,
+        sortParam$,
+        orderParam$,
       ).pipe(
-        map(([query, perPage, page, sort, order]) => new HttpParams().
-            set("q", query).
-            set("per_page", String(perPage)).
-            set("page", String(page)).
-            set("sort", String(sort)).
-            set("order", String(order))
-        ),
-      );
-      
-      const headers$:Observable<HttpHeaders> = this.textMatchSubject.pipe(
-        map(textMatch => textMatch ? new HttpHeaders({ Accept: GithubService.textMatchHeader }) : undefined),
+        scan<[string, string], HttpParams>((params, tuple) => params.set(...tuple), new HttpParams()),
       );
 
-      const search$ = combineLatest(params$, headers$).pipe(
-        switchMap(([params, headers]) => this.http.get<SearchResults>(GithubService.userSearchUrl, { headers: headers, params: params })),
+      const headers$:Observable<HttpHeaders> = this.searchParamsSubject.pipe(
+        pluck("showMatch"),
+        map(textMatch => textMatch ? new HttpHeaders({ Accept: GithubService.TEXT_MATCH_HEADER }) : undefined),
+      );
+
+      const search$ = combineLatest(params$, headers$, queryParam$).pipe(
+        switchMap(([params, headers]) => this.http.get<SearchResults>(GithubService.USER_SEARCH_URL, { headers: headers, params: params })),
         retryBackoff(<RetryBackoffConfig>{
           initialInterval: 1,
           maxRetries: 3,
-          shouldRetry: (error:HttpErrorResponse) => {
-            console.log('should retry', error.status !== 404);
-            return error.status !== 404;
-          },
+          shouldRetry: (error:HttpErrorResponse) => error.status !== 404,
         }),
         catchError(err => err.status < 500 ? NEVER : of(err)),
         share(),
