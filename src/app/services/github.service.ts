@@ -4,7 +4,7 @@ import { Subject, BehaviorSubject, combineLatest, Observable, of, NEVER, merge }
 import { Sort } from './sort.enum';
 import { Order } from './order.enum';
 import { filterPresent, debug, filterTrue } from '../helpers/rxjs-helpers';
-import { sample, map, switchMap, share, pluck, catchError, scan, debounceTime, filter, mergeMap, distinctUntilChanged, retry } from 'rxjs/operators';
+import { sample, map, switchMap, share, pluck, catchError, scan, debounceTime, filter, mergeMap, distinctUntilChanged, retry, auditTime } from 'rxjs/operators';
 import { User, SearchResults } from '../interfaces/search-results';
 import { retryBackoff, RetryBackoffConfig } from 'backoff-rxjs'
 import { SearchParams } from '../interfaces/search-params';
@@ -48,7 +48,7 @@ export class GithubService {
 
     const perPageParam$ = this.searchParamsSubject.pipe(
       pluck('perPage'),
-      debounceTime(500),
+      auditTime(1000),
       distinctUntilChanged(),
       debug('perPage'),
       filterTrue(),
@@ -58,7 +58,7 @@ export class GithubService {
 
     const currentPageParam$ = this.searchParamsSubject.pipe(
       pluck('page'),
-      debounceTime(500),
+      auditTime(1000),
       distinctUntilChanged(),
       debug('page'),
       filter(page => page > 0),
