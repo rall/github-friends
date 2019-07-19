@@ -4,10 +4,11 @@ import { Subject, BehaviorSubject, combineLatest, Observable, of, NEVER, merge }
 import { Sort } from './sort.enum';
 import { Order } from './order.enum';
 import { filterPresent, debug, filterTrue } from '../helpers/rxjs-helpers';
-import { sample, map, switchMap, share, pluck, catchError, scan, debounceTime, filter } from 'rxjs/operators';
+import { sample, map, switchMap, share, pluck, catchError, scan, debounceTime, filter, mergeMap, distinctUntilChanged, retry } from 'rxjs/operators';
 import { User, SearchResults } from '../interfaces/search-results';
 import { retryBackoff, RetryBackoffConfig } from 'backoff-rxjs'
 import { SearchParams } from '../interfaces/search-params';
+import { UserExtras } from '../interfaces/user-extras';
 
 @Injectable({
   providedIn: 'root'
@@ -34,76 +35,112 @@ export class GithubService {
   count$: Observable<number>;
   partial$: Observable<boolean>;
 
-  constructor(
-    private http: HttpClient,
-    ) {
-      const queryParam$ = this.searchParamsSubject.pipe(
-        pluck("term"),
-        filterPresent(),
-        sample(this.triggerSubject),
-        map<string, [string, string]>(query => ["q", query]),
-      );
+  constructor(private http: HttpClient) {
+    const queryParam$ = this.searchParamsSubject.pipe(
+      pluck("term"),
+      distinctUntilChanged(),
+      filterPresent(),
+      sample(this.triggerSubject),
+      map<string, [string, string]>(query => ["q", query]),
+      debug('query'),
+      share(),
+    );
 
-      const perPageParam$ = this.searchParamsSubject.pipe(
-        pluck('perPage'),
-        filterTrue(),
-        map<number, [string, string]>(per => ["per_page", String(per)]),
-      );
+    const perPageParam$ = this.searchParamsSubject.pipe(
+      pluck('perPage'),
+      debounceTime(500),
+      distinctUntilChanged(),
+      debug('perPage'),
+      filterTrue(),
+      map<number, [string, string]>(per => ["per_page", String(per)]),
+      share(),
+    );
 
-      const currentPageParam$ = this.searchParamsSubject.pipe(
-        pluck('page'),
-        filter(page => page > 0),
-        map<number, [string, string]>(page => ["page", String(page)]),
-      );
+    const currentPageParam$ = this.searchParamsSubject.pipe(
+      pluck('page'),
+      debounceTime(500),
+      distinctUntilChanged(),
+      debug('page'),
+      filter(page => page > 0),
+      map<number, [string, string]>(page => ["page", String(page)]),
+      share(),
+    );
 
-      const sortParam$ = this.searchParamsSubject.pipe(
-        pluck('sort'),
-        filterTrue(),
-        map<Sort, [string, string]>(sort => ["sort", String(sort)]),
-      );
+    const sortParam$ = this.searchParamsSubject.pipe(
+      pluck('sort'),
+      distinctUntilChanged(),
+      filterTrue(),
+      map<Sort, [string, string]>(sort => ["sort", String(sort)]),
+    );
 
-      const orderParam$ = this.searchParamsSubject.pipe(
-        pluck('order'),
-        filterTrue(),
-        map<Order, [string, string]>(order => ["order", String(order)]),
-      );
+    const orderParam$ = this.searchParamsSubject.pipe(
+      pluck('order'),
+      distinctUntilChanged(),
+      filterTrue(),
+      map<Order, [string, string]>(order => ["order", String(order)]),
+    );
 
-      const params$:Observable<HttpParams> = merge(
-        queryParam$,
-        perPageParam$,
-        currentPageParam$,
-        sortParam$,
-        orderParam$,
-      ).pipe(
-        scan<[string, string], HttpParams>((params, tuple) => params.set(...tuple), new HttpParams()),
-      );
+    const params$:Observable<HttpParams> = merge(
+      queryParam$,
+      perPageParam$,
+      currentPageParam$,
+      sortParam$,
+      orderParam$,
+    ).pipe(
+      debug('merge'),
+      scan<[string, string], HttpParams>((params, tuple) => params.set(...tuple), new HttpParams()),
+      debounceTime(1000),
+      filter(params => params.has("q")),
+    );
 
-      const headers$:Observable<HttpHeaders> = this.searchParamsSubject.pipe(
-        pluck("showMatch"),
-        map(textMatch => textMatch ? new HttpHeaders({ Accept: GithubService.TEXT_MATCH_HEADER }) : undefined),
-      );
+    params$.pipe(
+      map(p => p.toString()),
+      debug('params'),
+    ).subscribe();
 
-      const search$ = combineLatest(params$, headers$, queryParam$).pipe(
-        switchMap(([params, headers]) => this.http.get<SearchResults>(GithubService.USER_SEARCH_URL, { headers: headers, params: params })),
+    const headers$:Observable<HttpHeaders> = this.searchParamsSubject.pipe(
+      pluck("showMatch"),
+      map(textMatch => textMatch ? new HttpHeaders({ Accept: GithubService.TEXT_MATCH_HEADER }) : undefined),
+    );
+
+    const search$ = combineLatest(params$, headers$, queryParam$).pipe(
+      switchMap(([params, headers]) => this.http.get<SearchResults>(GithubService.USER_SEARCH_URL, { headers: headers, params: params }).pipe(
+        retryBackoff(<RetryBackoffConfig>{
+          initialInterval: 1000,
+          maxRetries: 3,
+          shouldRetry: (error:HttpErrorResponse) => error.status !== 404 && error.status !== 403,
+        }),
+        catchError(err => {
+          console.log('in catch', err.status);
+          return err.status < 500 ? NEVER : of(err);
+        }),
+      )),
+      debug('search'),
+      share(),
+    )
+
+    this.results$ = search$.pipe(
+      pluck("items"),
+    );
+
+    this.count$ = search$.pipe(
+      pluck("total_count"),
+    );
+
+    this.partial$ = search$.pipe(
+      pluck("incomplete_results"),
+    );
+  }
+
+  getUserExtras(url: string) {
+    return of(url).pipe(
+      mergeMap(url => this.http.get<UserExtras>(url).pipe(
         retryBackoff(<RetryBackoffConfig>{
           initialInterval: 1,
           maxRetries: 3,
-          shouldRetry: (error:HttpErrorResponse) => error.status !== 404,
+          shouldRetry: (error:HttpErrorResponse) => error.status !== 404 && error.status !== 403,
         }),
-        catchError(err => err.status < 500 ? NEVER : of(err)),
-        share(),
-      )
-
-      this.results$ = search$.pipe(
-        pluck("items"),
-      );
-
-      this.count$ = search$.pipe(
-        pluck("total_count"),
-      );
-
-      this.partial$ = search$.pipe(
-        pluck("incomplete_results"),
-      );
-    }
+      )),
+    );        
+  }
 }
