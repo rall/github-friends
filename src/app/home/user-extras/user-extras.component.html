@@ -1,0 +1,9 @@
+<div *ngIf="extras">
+  <div>Joined: {{ extras.created_at | date }}</div>
+  <div *ngIf="extras.name">Name: {{ extras.name }}</div>
+  <div *ngIf="extras.company">Company: {{ extras.company }}</div>
+  <div *ngIf="extras.location">Location: {{ extras.location }}</div>
+  <div *ngIf="extras.email">Email: {{ extras.email }}</div>
+  <div>Public Repos: {{ extras.public_repos }}</div>
+  <div>Followers: {{ extras.followers }}</div>
+</div>
