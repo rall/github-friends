@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { UserExtras } from 'src/app/interfaces/user-extras';
+import { UserExtras } from '../../interfaces/user-extras';
 
 @Component({
   selector: 'app-user-extras',

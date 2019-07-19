@@ -1,11 +1,10 @@
 import { Component, OnInit, Output, Input } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { Sort } from 'src/app/services/sort.enum';
-import { Order } from 'src/app/services/order.enum';
+import { Sort } from '../../services/sort.enum';
+import { Order } from '../../services/order.enum';
 import { Observable, Subject, fromEvent } from 'rxjs';
 import { filter, mapTo, delay, take } from 'rxjs/operators';
-import { SearchParams } from 'src/app/interfaces/search-params';
-import { debug } from 'src/app/helpers/rxjs-helpers';
+import { SearchParams } from '../../interfaces/search-params';
 
 @Component({
   selector: 'app-search',

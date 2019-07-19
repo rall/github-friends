@@ -2,7 +2,7 @@ import { CUSTOM_ELEMENTS_SCHEMA, Component } from '@angular/core';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { UserComponent } from './user.component';
-import { User } from 'src/app/interfaces/search-results';
+import { User } from '../../interfaces/search-results';
 
 describe('UserComponent', () => {
   let component: UserComponent;

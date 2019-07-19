@@ -1,10 +1,10 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { User } from 'src/app/interfaces/search-results';
+import { User } from '../../interfaces/search-results';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { filterTrue } from 'src/app/helpers/rxjs-helpers';
-import { UserExtras } from 'src/app/interfaces/user-extras';
+import { filterTrue } from '../../helpers/rxjs-helpers';
+import { UserExtras } from '../../interfaces/user-extras';
 import { take, mergeMap, mapTo, shareReplay } from 'rxjs/operators';
-import { GithubService } from 'src/app/services/github.service';
+import { GithubService } from '../../services/github.service';
 
 @Component({
   selector: 'app-user',
