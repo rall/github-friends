@@ -7,6 +7,8 @@ The pagination UI is very weird indeed: using a form input for selecting a page 
 
 It would be nice if a new search reset the page count to 1, and also if the number of pages was displayed (a straightforward calculation as we know the total count and the number per page)
 
+The rate limit is handled by making calls to the `/rate_limit` endpoint (it isn't rate limited itself, thankfully) which happen with every search, and then polling every 3 seconds when we're currently limited. The search bar is hidden when we're limited, and shows again when requests are available.
+
 Some other features I was planning:
 
  - Show the text match data with search results: there's a toggle to request that data (it sets a header) but I didn't write the component to display matches with search results
