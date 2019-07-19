@@ -39,6 +39,7 @@ class TestComponentWrapper {
     login: 'foo',
     avatar_url: 'https://example.com/images/foo?x=10',
     url: 'https://example.com/foo',
-    type: 'user'
+    type: 'user',
+    html_url: 'http://example.com/user' 
   };
 }
