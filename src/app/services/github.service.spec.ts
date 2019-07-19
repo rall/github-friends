@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, tick, fakeAsync } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController, TestRequest } from '@angular/common/http/testing';
 import { GithubService } from './github.service';
 import { HttpClient } from '@angular/common/http';
@@ -39,13 +39,16 @@ describe('GithubService', () => {
 
   describe("When the query is empty", () => {
     it("doesn't search when triggered", () => {
+      fakeAsync(() => {
       githubService.results$.subscribe(
         query => expect(query).toEqual([]),
         fail
       )
       githubService.triggerSubject.next(true);
+        tick(1000);
       httpTestingController.expectNone(GithubService.USER_SEARCH_URL);
     })
+  })
   })
 
   const userSearch = (request) => request.method === 'GET' && request.url === GithubService.USER_SEARCH_URL;
@@ -56,8 +59,11 @@ describe('GithubService', () => {
     });
 
     it("searches when triggered", () => {
+      fakeAsync(() => {
       githubService.triggerSubject.next(true);
+        tick(1000);
       httpTestingController.expectOne(userSearch);
+      })
     });
 
     describe("the search", () => {
@@ -82,19 +88,25 @@ describe('GithubService', () => {
       describe('results body', () => {
         beforeEach(() => githubService.triggerSubject.next(true));
         it("outputs the count", () => {
+          fakeAsync(() => {
           githubService.count$.subscribe(
             count => expect(count).toEqual(91),
             fail
           );
+            tick(1000);
           request().flush(someResults);
+          })
         });
   
         it("outputs the user list", () => {
+          fakeAsync(() => {
           githubService.results$.subscribe(
             users => expect(users[0].login).toEqual("bob@example.com"),
             fail
           );
+            tick(1000);
           request().flush(someResults);
+        });
         });
 
         xit("retries on error", (done) => {
@@ -123,9 +135,12 @@ describe('GithubService', () => {
         });
 
         it("sets the header requesting textmatch", () => {
+          fakeAsync(() => {
           const request = httpTestingController.expectOne(req => /text-match\+json/.test(req.headers.get('accept')));
+            tick(1000);
           request.flush(someResults);
         })
+      })
       })
 
       describe('the params', () => {
@@ -140,23 +155,35 @@ describe('GithubService', () => {
         });
 
         it("sets the query", () => {
+          fakeAsync(() => {
           const request = httpTestingController.expectOne(req => new RegExp("q=wibble").test(req.urlWithParams));
+            tick(1000);
           request.flush(someResults);
+          });
         })
 
         it("sets sort", () => {
+          fakeAsync(() => {
           const request = httpTestingController.expectOne(req => new RegExp("sort=repositories").test(req.urlWithParams));
+            tick(1000);
           request.flush(someResults);
+          });
         })
 
         it("sets page", () => {
+          fakeAsync(() => {
           const request = httpTestingController.expectOne(req => new RegExp("page=99").test(req.urlWithParams));
+            tick(1000);
           request.flush(someResults);
+          });
         })
 
         it("sets per-page", () => {
+          fakeAsync(() => {
           const request = httpTestingController.expectOne(req => new RegExp("per_page=4").test(req.urlWithParams));
+            tick(1000);
           request.flush(someResults);
+          });
         })
       })
     })
