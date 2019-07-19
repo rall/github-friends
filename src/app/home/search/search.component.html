@@ -29,7 +29,7 @@
         <ion-item>
           <ion-label position="fixed">Sort by</ion-label>
           <ion-select formControlName="sort">
-            <ion-select-option *ngFor="let item of sort | keyvalue" [value]="item.key">{{ item.value }}</ion-select-option>
+            <ion-select-option *ngFor="let item of sort | keyvalue" [value]="item.value">{{ item.key }}</ion-select-option>
           </ion-select>
         </ion-item>
       </ion-col>
@@ -37,7 +37,7 @@
         <ion-item>
           <ion-label position="fixed">Order</ion-label>
           <ion-select formControlName="order">
-            <ion-select-option *ngFor="let item of order | keyvalue" [value]="item.key">{{ item.value }}</ion-select-option>
+            <ion-select-option *ngFor="let item of order | keyvalue" [value]="item.value">{{ item.key }}</ion-select-option>
           </ion-select>
         </ion-item>
       </ion-col>
