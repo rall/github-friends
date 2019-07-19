@@ -42,7 +42,6 @@ export class GithubService {
       filterPresent(),
       sample(this.triggerSubject),
       map<string, [string, string]>(query => ["q", query]),
-      debug('query'),
       share(),
     );
 
@@ -50,20 +49,16 @@ export class GithubService {
       pluck('perPage'),
       auditTime(1000),
       distinctUntilChanged(),
-      debug('perPage'),
       filterTrue(),
       map<number, [string, string]>(per => ["per_page", String(per)]),
-      share(),
     );
 
     const currentPageParam$ = this.searchParamsSubject.pipe(
       pluck('page'),
       auditTime(1000),
       distinctUntilChanged(),
-      debug('page'),
       filter(page => page > 0),
       map<number, [string, string]>(page => ["page", String(page)]),
-      share(),
     );
 
     const sortParam$ = this.searchParamsSubject.pipe(
@@ -87,20 +82,16 @@ export class GithubService {
       sortParam$,
       orderParam$,
     ).pipe(
-      debug('merge'),
-      scan<[string, string], HttpParams>((params, tuple) => params.set(...tuple), new HttpParams()),
       debounceTime(1000),
+      scan<[string, string], HttpParams>((params, tuple) => params.set(...tuple), new HttpParams()),
       filter(params => params.has("q")),
+      share(),
     );
-
-    params$.pipe(
-      map(p => p.toString()),
-      debug('params'),
-    ).subscribe();
 
     const headers$:Observable<HttpHeaders> = this.searchParamsSubject.pipe(
       pluck("showMatch"),
       map(textMatch => textMatch ? new HttpHeaders({ Accept: GithubService.TEXT_MATCH_HEADER }) : undefined),
+      distinctUntilChanged(),
     );
 
     const search$ = combineLatest(params$, headers$, queryParam$).pipe(
@@ -111,11 +102,9 @@ export class GithubService {
           shouldRetry: (error:HttpErrorResponse) => error.status !== 404 && error.status !== 403,
         }),
         catchError(err => {
-          console.log('in catch', err.status);
           return err.status < 500 ? NEVER : of(err);
         }),
       )),
-      debug('search'),
       share(),
     )
 
