@@ -1,23 +1,27 @@
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Component } from '@angular/core';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { UserComponent } from './user.component';
+import { User } from 'src/app/interfaces/search-results';
 
 describe('UserComponent', () => {
   let component: UserComponent;
-  let fixture: ComponentFixture<UserComponent>;
+  let fixture: ComponentFixture<TestComponentWrapper>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ UserComponent ],
+      declarations: [
+        TestComponentWrapper,
+        UserComponent
+      ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(UserComponent);
-    component = fixture.componentInstance;
+    fixture = TestBed.createComponent(TestComponentWrapper);
+    component = fixture.debugElement.children[0].componentInstance;
     fixture.detectChanges();
   });
 
@@ -25,3 +29,16 @@ describe('UserComponent', () => {
     expect(component).toBeTruthy();
   });
 });
+
+@Component({
+  selector: 'test-component-wrapper',
+  template: '<app-user [user]="user"></app-user>'
+})
+class TestComponentWrapper {
+  user:User = {
+    login: 'foo',
+    avatar_url: 'https://example.com/images/foo?x=10',
+    url: 'https://example.com/foo',
+    type: 'user'
+  };
+}

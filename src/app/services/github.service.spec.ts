@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 import { User, SearchResults } from '../interfaces/search-results';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { debug } from '../helpers/rxjs-helpers';
 import { Sort } from './sort.enum';
 
 describe('GithubService', () => {
@@ -40,20 +39,20 @@ describe('GithubService', () => {
 
   describe("When the query is empty", () => {
     it("doesn't search when triggered", () => {
-      githubService.querySubject.subscribe(
-        query => expect(query).toEqual(''),
+      githubService.results$.subscribe(
+        query => expect(query).toEqual([]),
         fail
       )
       githubService.triggerSubject.next(true);
-      httpTestingController.expectNone(GithubService.userSearchUrl);
+      httpTestingController.expectNone(GithubService.USER_SEARCH_URL);
     })
   })
 
-  const userSearch = (request) => request.method === 'GET' && request.url === GithubService.userSearchUrl;
+  const userSearch = (request) => request.method === 'GET' && request.url === GithubService.USER_SEARCH_URL;
 
   describe("When the query is populated", () => {
     beforeEach(() => {
-      githubService.querySubject.next('sausages');
+      githubService.searchParamsSubject.next({ term: 'sausages' });
     });
 
     it("searches when triggered", () => {
@@ -102,12 +101,29 @@ describe('GithubService', () => {
           );
           request().flush(someResults);
         });
+
+        xit("retries on error", (done) => {
+          // const serverErrorSpy = spyOn(httpClient, 'get').and.returnValue(of({ status: 500, statusText: 'Server Error' }));
+
+          // expect(serverErrorSpy).toHaveBeenCalled();
+          githubService.triggerSubject.next(true)
+          // const requests = httpTestingController.match(request => {
+          //   return request.method === 'GET' && request.url === GithubService.userSearchUrl;
+          // });
+          // expect(requests.length).toBe(3);
+
+          request().flush('whoops!', { status: 500, statusText: 'Server Error' });
+          request().flush('whoops!', { status: 500, statusText: 'Server Error' });
+          request().flush('whoops!', { status: 500, statusText: 'Server Error' });
+          request().flush(someResults);
+          done();
+        })
   
       })
 
       describe('the headers', () => {
         beforeEach(() => {
-          githubService.textMatchSubject.next(true);
+          githubService.searchParamsSubject.next({ term: 'sausages', showMatch: true });
           githubService.triggerSubject.next(true);
         });
 
@@ -119,10 +135,12 @@ describe('GithubService', () => {
 
       describe('the params', () => {
         beforeEach(() => {
-          githubService.querySubject.next('wibble');
-          githubService.sortSubject.next(Sort.repos);
-          githubService.currentPageSubject.next(99);
-          githubService.perPageSubject.next(4);
+          githubService.searchParamsSubject.next({
+            term: 'wibble',
+            sort: Sort.repos,
+            page: 99,
+            perPage: 4
+          });
           githubService.triggerSubject.next(true);
         });
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SearchParams } from '../interfaces/search-params';
 import { GithubService } from '../services/github.service';
@@ -11,10 +11,7 @@ import { GithubService } from '../services/github.service';
 export class HomePage {
   constructor(
     private githubService: GithubService
-  ) {
-
-    
-  }
+  ) {}
 
   searchParamsSubject: Subject<SearchParams> = new Subject();
 

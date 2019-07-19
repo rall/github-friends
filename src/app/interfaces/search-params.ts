@@ -3,9 +3,9 @@ import { Order } from '../services/order.enum';
 
 export interface SearchParams {
     term: string;
-    sort: Sort;
-    order: Order;
-    page: number;
-    perPage: number;
-    showMatch: boolean;
+    sort?: Sort;
+    order?: Order;
+    page?: number;
+    perPage?: number;
+    showMatch?: boolean;
 }
