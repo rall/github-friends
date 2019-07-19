@@ -79,11 +79,6 @@ describe('GithubService', () => {
         }
       })
 
-      afterEach(() => {
-        // After every test, assert that there are no more pending requests.
-        httpTestingController.verify();
-      });
-
       describe('results body', () => {
         beforeEach(() => githubService.triggerSubject.next(true));
         it("outputs the count", () => {
