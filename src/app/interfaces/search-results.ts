@@ -14,6 +14,7 @@ export interface TextMatch {
 export interface User {
     login: string;
     avatar_url: string;
+    html_url: string;
     url: string;
     type: string;
     text_matches?: TextMatch[];

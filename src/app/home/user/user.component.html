@@ -4,7 +4,7 @@
   </ion-avatar>
   <ion-label>
     <h2>
-      {{ user.login }}
+      <a href="{{ user.html_url }}" target="_blank">{{ user.login }}</a>
     </h2>
   </ion-label>
   <app-user-extras [extras]="extras$ | async" *ngIf="showExtras | async"></app-user-extras>
