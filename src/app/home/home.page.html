@@ -1,6 +1,9 @@
 <ion-header>
   <ion-toolbar>
-    <app-search (trigger)="doSearch($event)" [searchParams]="githubService.searchParamsSubject" [count]="githubService.count$ | async"></app-search>
+    <app-search *ngIf="!(githubService.rateLimitedSubject | async)" (trigger)="doSearch($event)" [searchParams]="githubService.searchParamsSubject" [count]="githubService.count$ | async"></app-search>
+    <div text-center *ngIf="githubService.rateLimitedSubject | async">
+      Stop clicking for a minute! We're rate limited!
+    </div>
   </ion-toolbar>
 </ion-header>
 

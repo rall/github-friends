@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
-import { Subject, BehaviorSubject, combineLatest, Observable, of, NEVER, merge } from 'rxjs';
+import { Subject, BehaviorSubject, combineLatest, Observable, of, NEVER, merge, interval } from 'rxjs';
 import { Sort } from './sort.enum';
 import { Order } from './order.enum';
-import { filterPresent, debug, filterTrue } from '../helpers/rxjs-helpers';
-import { sample, map, switchMap, share, pluck, catchError, scan, debounceTime, filter, mergeMap, distinctUntilChanged, retry, auditTime } from 'rxjs/operators';
+import { filterPresent, filterTrue, filterFalse } from '../helpers/rxjs-helpers';
+import { sample, map, switchMap, share, pluck, catchError, scan, debounceTime, filter, mergeMap, distinctUntilChanged, auditTime, switchMapTo, takeUntil } from 'rxjs/operators';
 import { User, SearchResults } from '../interfaces/search-results';
 import { retryBackoff, RetryBackoffConfig } from 'backoff-rxjs'
 import { SearchParams } from '../interfaces/search-params';
@@ -17,6 +17,7 @@ export class GithubService {
   static HOST_NAME = "api.github.com";
   static BASE_URL = `https://${GithubService.HOST_NAME}/search/`;
   static USER_SEARCH_URL = `${GithubService.BASE_URL}users`;
+  static RATE_LIMIT_URL = `https://${GithubService.HOST_NAME}/rate_limit`;
   static TEXT_MATCH_HEADER = "application/vnd.github.v3.text-match+json";
 
   static INITIAL_PARAMS:SearchParams = {
@@ -35,7 +36,16 @@ export class GithubService {
   count$: Observable<number>;
   partial$: Observable<boolean>;
 
+  rateLimitedSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
+
   constructor(private http: HttpClient) {
+    const rateLimited$ = this.rateLimitedSubject.pipe(
+      filterTrue(),
+    );
+    const unlimited$ = this.rateLimitedSubject.pipe(
+      filterFalse(),
+    );
+
     const queryParam$ = this.searchParamsSubject.pipe(
       pluck("term"),
       distinctUntilChanged(),
@@ -119,6 +129,23 @@ export class GithubService {
     this.partial$ = search$.pipe(
       pluck("incomplete_results"),
     );
+
+    /*  
+    THE RATE LIMIT
+    check current remainning requests after each search and polling when we're limited
+    */
+   
+    const rateLimitPoller$ = rateLimited$.pipe(
+      switchMapTo(interval(3000).pipe(
+        takeUntil(unlimited$),
+      ))
+    );
+
+    merge(search$, rateLimitPoller$).pipe(
+      switchMapTo(this.http.get(GithubService.RATE_LIMIT_URL)),
+      pluck("resources", "search", "remaining"),
+      map(remaining => remaining === 0),
+    ).subscribe(this.rateLimitedSubject);
   }
 
   getUserExtras(url: string) {
@@ -133,3 +160,5 @@ export class GithubService {
     );        
   }
 }
+
+
