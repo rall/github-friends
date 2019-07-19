@@ -14,14 +14,14 @@ import { GithubService } from '../../services/github.service';
 export class UserComponent implements OnInit {
   @Input() user:User;
 
-  private avatarUrl: string;
+  avatarUrl: string;
 
   extras$: Observable<UserExtras>;
 
   showExtras:BehaviorSubject<boolean> = new BehaviorSubject(false);
   
   constructor(
-    private githubService:GithubService,
+    public githubService:GithubService,
   ) { }
 
   ngOnInit() {

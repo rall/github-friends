@@ -10,7 +10,7 @@ import { GithubService } from '../services/github.service';
 })
 export class HomePage {
   constructor(
-    private githubService: GithubService
+    public githubService: GithubService
   ) {}
 
   searchParamsSubject: Subject<SearchParams> = new Subject();
