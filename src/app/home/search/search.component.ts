@@ -25,6 +25,7 @@ export class SearchComponent implements OnInit {
   order = Order;
 
   @Input() searchParams:Subject<SearchParams>;
+  @Input() count: number;
 
   // auto submit by keypress isn't working, possibly because of shadow dom, so use 
   // a stream instead, with a short delay to allow form.valueChanges to propogate

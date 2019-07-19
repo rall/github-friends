@@ -1,15 +1,10 @@
 <ion-header>
   <ion-toolbar>
-    <app-search (trigger)="doSearch($event)" [searchParams]="githubService.searchParamsSubject"></app-search>
+    <app-search (trigger)="doSearch($event)" [searchParams]="githubService.searchParamsSubject" [count]="githubService.count$ | async"></app-search>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <ion-list-header>
-    <ion-label>
-      {{ githubService.count$ | async }}
-    </ion-label>
-  </ion-list-header>
   <ion-list text-center>
     <app-user *ngFor="let user of githubService.results$ | async" [user]="user"></app-user>
   </ion-list>
