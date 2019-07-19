@@ -20,7 +20,7 @@ export class UserComponent implements OnInit {
 
   private setAvatarUrl() {
     const avatarUrl = new URL(this.user.avatar_url);
-    avatarUrl.searchParams.set("size", "200");
+    avatarUrl.searchParams.set("size", "100");
     return avatarUrl.href;    
   }
 }
