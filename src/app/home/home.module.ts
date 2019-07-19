@@ -7,6 +7,7 @@ import { RouterModule } from '@angular/router';
 import { HomePage } from './home.page';
 import { SearchComponent } from './search/search.component';
 import { UserComponent } from './user/user.component';
+import { UserExtrasComponent } from './user-extras/user-extras.component';
 
 @NgModule({
   imports: [
@@ -24,7 +25,8 @@ import { UserComponent } from './user/user.component';
   declarations: [
     HomePage,
     SearchComponent,
-    UserComponent
+    UserComponent,
+    UserExtrasComponent,
   ],
   entryComponents: [
     SearchComponent,
