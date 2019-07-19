@@ -23,4 +23,8 @@ export class UserComponent implements OnInit {
     avatarUrl.searchParams.set("size", "100");
     return avatarUrl.href;    
   }
+
+  showMore(user:User) {
+    console.log(user);
+  }
 }
