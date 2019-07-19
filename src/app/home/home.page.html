@@ -5,9 +5,12 @@
 </ion-header>
 
 <ion-content>
-  <ion-list>
-    <ion-item *ngFor="let user of githubService.results$ | async">
-      <app-user [user]="user"></app-user>
-    </ion-item>
+  <ion-list-header>
+    <ion-label>
+      {{ githubService.count$ | async }}
+    </ion-label>
+  </ion-list-header>
+  <ion-list text-center>
+    <app-user *ngFor="let user of githubService.results$ | async" [user]="user"></app-user>
   </ion-list>
 </ion-content>
